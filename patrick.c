@@ -18,7 +18,7 @@ typedef struct medProf {
     double waitForPatient;
 } medProf;
 
-pthread_mutex_t patientReady;
+sem_t patientReady;
 
 void* createMedProf(void *arg)
 {
@@ -31,11 +31,11 @@ void* createMedProf(void *arg)
 
     // performing medical checkup
     sleep(data->waitForPatient);
-    printf("Medical Professional %d (Thread: %d): Checking Patient\n", id, tid);
+    printf("Medical Professional %i (Thread: %i): Checking Patient\n", id, tid);
     
 
     sem_post(&patientReady);
-    printf("Medical Professional %d (Thread: %d): Done Checking Patient\n", id, tid);
+    printf("Medical Professional %i (Thread: %i): Done Checking Patient\n", id, tid);
 }
 
 int main()
@@ -51,7 +51,7 @@ int main()
         newProf[i].waitForPatient = waitTime; // idk if this is right
         if ((rc = pthread_create(&threads[i], NULL,  &newProf[i], NULL)))
         {
-            fprintf(stderr, "error: pthread_create, createMedProf: %d\n", rc);
+            fprintf(stderr, "error: pthread_create, createMedProf: %i\n", rc);
             return EXIT_FAILURE;
         }
     }

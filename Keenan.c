@@ -35,7 +35,7 @@ void sitOnSofa(int id, int tid)
     printf("Patient %3i (Thread ID %5i):Sitting on a sofa in the waiting room\n", id, tid);
 }
 
-void waitForPatient()
+void waitForPatient(int id, int tid)
 {
-    
+    printf("Medical Professional %3i (Thread ID %3i): Waiting for patient\n", id, tid);
 }

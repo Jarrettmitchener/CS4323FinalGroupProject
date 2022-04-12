@@ -8,6 +8,7 @@
 #include "Caleb.c"
 #include "Keenan.c"
 #include "Patrick.c"
+#include "utility.c"
 
 
 //mutexes and semaphore variables declared here 
@@ -15,6 +16,7 @@ pthread_mutex_t waitingRoomMutex;
 pthread_mutex_t checkSofa;
 pthread_mutex_t checkWait;
 pthread_mutex_t timing;
+pthread_mutex_t temp;
 sem_t sofaSemaphore;
 
 
@@ -38,9 +40,11 @@ int medProfArr[10000];
 
 //variables that are used in testing
 //will be removed later when program arguments are added;
-int spaceOfWaitingRoom = 10;
-int numOfThreads = 10;
-int numOfSofas = 5;
+int spaceOfWaitingRoom = 5;
+int numOfPatients = 7;
+int numOfSofas = 3;
+int numOfMedProf = 1;
+int numOfThreads;
 
 //boolean array that will be used to determine when threads fire
 int flag[15];
@@ -71,7 +75,7 @@ int findMaxWaitTime(int id)
     int max = waitTimeArr[0];
     int maxIndex = 0;
 
-    for(int i = 1; i < numOfThreads; i++)
+    for(int i = 1; i < numOfPatients; i++)
     {
         if(waitTimeArr[i] > max)
         {
@@ -103,7 +107,7 @@ int findMaxSofaWaitTime(int PID)
     int max = sofaWaitTimeArr[0];
     int maxIndex = 0;
 
-    for(int i = 1; i < numOfThreads; i++)
+    for(int i = 1; i < numOfPatients; i++)
     {
         if(sofaWaitTimeArr[i] > max)
         {
@@ -169,6 +173,11 @@ int getMedProfStatus(int MID)
 {
     return medProfArr[MID];
 }
+
+int getNumOfPatients()
+{
+    return numOfPatients;
+}
 //start of functions that are needed according to document
 //note that some of these functions really don't need to exist
 //like sit on sofa, the semaphore already stops the sofa from 
@@ -189,6 +198,26 @@ void* medProfFunc(void *arg)
 {
     medProf *data = (medProf *)arg;
     int id = data->id;
+    int tid = data->tid;
+
+    waitForPatient(id, tid);
+    //start of while loop
+    while(1)
+    {
+        int checkup = -1;
+
+        while(checkup == -1)
+        {
+            checkup = checkIfPatientOpen(numOfPatients, patientArr);
+        }
+
+        yellow();
+        printf("MedProf ID %3i is checking up on patient ID %i\n", id, checkup);
+        reset();
+
+        patientArr[checkup] = -1;//temp resets patient value
+    }
+
 }
 
 //function for patient threads
@@ -203,12 +232,14 @@ void* patientFunc(void *arg)
 
     //critical section for waiting room entering
     pthread_mutex_lock(&waitingRoomMutex);
-    printf("Patient %3i (Thread ID %5i):Arriving at clinic\n", id, id);
+    printf("Patient %3i (Thread ID %5i):Arriving at clinic\n", id, tid);
 
     int leave = addWaitingRoom();
     if(leave == 0)
     {
-        printf("Patient %3i (Thread ID %5i):Leaving clinic without checkup\n", id, id);
+        red();
+        printf("Patient %3i (Thread ID %5i):Leaving clinic without checkup\n", id, tid);
+        reset();
 
         //adds to amount of patients that didnt get a medical checkup
         addPatientsLeft();
@@ -281,31 +312,37 @@ void* patientFunc(void *arg)
             pthread_mutex_unlock(&checkWait);
             if(counter > 500)
             {
-                printf("Thread ID %i is BRUHHHHHing\n", id);
+                printf("Thread ID %i is BRUHHHHHing\n", tid);
                 sleep(2);
             }
             counter++;
         }
 
-        printf("Thread ID %i has longest wait time on sofa\n", id);
+        printf("Patient ID %3i has longest wait time on sofa\n", id);
+        patientArr[id] = 0;
         
     }
     
 }
 
+//intializes the begin flag
 void flag_init()
 {
-    for(int i = 0; i < numOfThreads; i++)
+    for(int i = 0; i < numOfPatients; i++)
     {
         flag[i] = 0;
     }
 }
 
-void statusInit()
+//intializes the status fo patient and medProf arr
+void statusInit(int patients, int medProfs)
 {
-    for(int i = 0; i < numOfThreads; i++)
+    for(int i = 0; i < patients; i++)
     {
         patientArr[i] = -1;
+    }
+    for(int i = 0; i < medProfs; i++)
+    {
         medProfArr[i] = -1;
     }
 }
@@ -316,8 +353,10 @@ int main()
     pthread_mutex_init(&waitingRoomMutex, NULL);
     pthread_mutex_init(&checkSofa, NULL);
     pthread_mutex_init(&timing, NULL);
+    pthread_mutex_init(&temp, NULL);
     flag_init();
-    statusInit();
+    statusInit(numOfPatients, numOfMedProf);
+    numOfThreads = numOfPatients + numOfMedProf;
 
     //keenan
     setAmountOfSofas(numOfSofas);
@@ -326,28 +365,47 @@ int main()
     //creates the threadpool
     //currently only using patient implementation
     pthread_t threads[numOfThreads];
-    patient patientData[numOfThreads];
+    patient patientData[numOfPatients];
+    medProf medProfData[numOfMedProf];
     int rc;
+    int counter = 0;
     for(int i = 0; i < numOfThreads; i++)
     {
-        //assigns patient data
-        patientData[i].id = i;
-        patientData[i].tid = i;
-        patientData[i].waitingRoomTime = 0;
 
-        waitTimeArr[i] = -1;
-
-        if ((rc = pthread_create(&threads[i], NULL, patientFunc, &patientData[i])))
+        if(i < numOfMedProf)
         {
-            //this will only run if the thread cannot be created 
-            fprintf(stderr, "error creating thread %i\n", i);
-            return EXIT_FAILURE;
+            medProfData[i].id = counter;
+            medProfData[i].tid = i;
+            medProfData[i].waitTime = 0;
+
+            if ((rc = pthread_create(&threads[i], NULL, medProfFunc, &medProfData[i])))
+            {
+                //this will only run if the thread cannot be created 
+                fprintf(stderr, "error creating medical professional thread %i\n", i);
+                return EXIT_FAILURE;
+            }
         }
-        usleep(10);
+        else
+        {
+            //assigns patient data
+            patientData[i - numOfMedProf].id = i - numOfMedProf;
+            patientData[i - numOfMedProf].tid = counter;
+            patientData[i - numOfMedProf].waitingRoomTime = 0;
+
+            waitTimeArr[i - numOfMedProf] = -1;
+            if ((rc = pthread_create(&threads[i], NULL, patientFunc, &patientData[i - numOfMedProf])))
+            {
+                //this will only run if the thread cannot be created 
+                fprintf(stderr, "error creating patient thread %i\n", i);
+                return EXIT_FAILURE;
+            }
+        }
+        usleep(100);
+        counter++;
     }
 
     //activates the threads every second
-    for(int i = 0; i < numOfThreads; i++)
+    for(int i = 0; i < numOfPatients; i++)
     {
         sleep(1);
         flag[i] = 1;

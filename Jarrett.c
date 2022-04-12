@@ -5,6 +5,9 @@
 #include <unistd.h>
 #include <semaphore.h>
 
+
+
+
 //mutexes and semaphore variables declared here 
 pthread_mutex_t waitingRoomMutex;
 sem_t sofaSemaphore;
@@ -13,6 +16,12 @@ sem_t sofaSemaphore;
 //counters used for functions
 int sofaCounter = 0;
 int waitingroomCounter = 0;
+
+//statistic variables
+int numOfSuccessfulCheckups = 0;
+int numOfPatientsThatLeft = 0;
+double avgWaitTimeForMedProf = 0;
+double avgWaitTimeForPatients = 0;
 
 //variables that are used in testing
 //will be removed later when program arguments are added;
@@ -50,6 +59,36 @@ int addWaitingRoom()
         return 1;
     }
 }
+//function to lower waiting room counter
+//will be used when patient is being checked up on 
+void removeWaitingRoom()
+{
+    waitingroomCounter--;
+}
+
+//adds number of Patients that left counter
+void addPatientsLeft()
+{
+    numOfPatientsThatLeft++;
+}
+//start of functions that are needed according to document
+//note that some of these functions really don't need to exist
+//like sit on sofa, the semaphore already stops the sofa from 
+//being sat on if the sofas are full
+//because of this, I tried to give them some utility use
+//and added more methods that would work with the utility use
+//like adding to a global sofa counter variables
+
+void sitOnSofa(int id, int tid)
+{
+    printf("Patient %3i (Thread ID %5i):Sitting on a sofa in the waiting room\n", id, tid);
+}
+void enterWaitingRoom(int id, int tid)
+{
+    printf("Patient %3i (Thread ID %5i):Going into the clinic\n", id, tid);
+}
+
+
 //function for medical professional threads
 void* medProfFunc(void *arg)
 {
@@ -61,14 +100,10 @@ void* medProfFunc(void *arg)
 void* patientFunc(void *arg)
 {
     patient *data = (patient *)arg;
-    int id = data->id;
-    //printf("Thread ID %i has been created\n", id);
-    
+    int id = data->id;    
 
     //thread waits so it can only start when told to by main
     while(flag[id] == 0);
-    //printf("Thread ID %i has started\n", id);
-
 
     //critical section for waiting room entering
     pthread_mutex_lock(&waitingRoomMutex);
@@ -78,11 +113,12 @@ void* patientFunc(void *arg)
     {
         printf("Patient %3i (Thread ID %5i):Leaving clinic without checkup\n", id, id);
         //pthread_exit(NULL);//temp exit method because thread shouldn't do anything now
+        addPatientsLeft();
         pthread_mutex_unlock(&waitingRoomMutex);
     }
     else
     {
-        printf("Patient %3i (Thread ID %5i):Going into the clinic\n", id, id);
+        enterWaitingRoom(id, id);
 
         sleep(2);
         pthread_mutex_unlock(&waitingRoomMutex);
@@ -91,7 +127,8 @@ void* patientFunc(void *arg)
         //start of sofa semaphore critical section
         sem_wait(&sofaSemaphore);
 
-        printf("Patient %3i (Thread ID %5i):Sitting on a sofa in the waiting room\n", id, id);
+        sitOnSofa(id, id);
+
         sleep(2);
         sem_post(&sofaSemaphore);
         //end of sofa section
@@ -127,7 +164,7 @@ int main()
         if ((rc = pthread_create(&threads[i], NULL, patientFunc, &patientData[i])))
         {
             //this will only run if the thread cannot be created 
-            fprintf(stderr, "error: pthread_create, rc: %d\n", rc);
+            fprintf(stderr, "error creating thread %i\n", i);
             return EXIT_FAILURE;
         }
     }
@@ -147,5 +184,9 @@ int main()
         //printf("%d\n", res);
     }
     printf("ALL HAVE BEEN JOINED\n");
+
+    //destroys mutexes and semaphores
+    sem_destroy(&sofaSemaphore);
+    pthread_mutex_destroy(&waitingRoomMutex);
 
 }

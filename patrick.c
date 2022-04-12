@@ -8,7 +8,7 @@ void GetMedicalCheckup(int *id) {
     sem_wait(&Professional_Ready); // wait for medical professional to be ready
 
     sem_post(&Professional_Ready); // oh boi, he occupied with patient
-    printf("Medical Professional %d (Thread ID: %ld): Starting Patient Checkup.\n" , *id, pthread_self());
+    printf("Medical Professional %d (Thread ID: %ld): Getting sPatient Checkup.\n" , *id, pthread_self());
     sem_post(&PerformCheckup);
     printf("Medical Professional %d (Thread ID: %ld): Patient Checkup Complete.\n" , *id, pthread_self());
     sem_post(&Professional_Ready); // he ready

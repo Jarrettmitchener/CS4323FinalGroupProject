@@ -35,7 +35,7 @@ void* createMedProf(void *arg)
     
 
     sem_post(&patientReady);
-    printf("Medical Professional %d (Thread: %d): Done Checking Patient\n", id);
+    printf("Medical Professional %d (Thread: %d): Done Checking Patient\n", id, tid);
 }
 
 int main()

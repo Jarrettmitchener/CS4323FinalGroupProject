@@ -42,28 +42,35 @@ void* waitForPatient(void *id){
 
 
 int main(){
-        double *timeArr = malloc(1000);
+
+    patient* patientData = malloc(10000);
+
+
+    //DEV PURPOSE ONLY
+    int numOfThreads = 10;
+
+    double *timeArr = malloc(1000);
 
     //getting time of each thread currently waiting on couch 
     for(int i = 0; i < numOfThreads; i++){
-        timeArr = patientData[i]->waitTime;
+        timeArr[i] = patientData->waitTime;
     }
 
-    size_t n = sizeof(timeArr)/sizeof(timeArr[0]);
+    size_t n = sizeof(timeArr) / sizeof(timeArr[0]);
     int temp = 0;
     //descending sort to get highest wait value
     for (int i = 0; i < n; i++){
-        for (j = i + 1; j < n; ++j){
-            if (patientData[i] < patientData[j]){
-                temp = patientData[i];
-                patientData[i] = patientData[j];
-                patientData[j] = temp;
+        for (int j = i + 1; j < n; ++j){
+            if (timeArr[i] < timeArr[j]){
+                temp = timeArr[i];
+                timeArr[i] = timeArr[j];
+                timeArr[j] = temp;
             }
         }
     }
 
     //if statement that decides thread with highest wait time sits down once couch is open
-    if(parameter == patientData[0]){
+    // if(parameter == patientData[0]){
 
-    }
+    // }
 }

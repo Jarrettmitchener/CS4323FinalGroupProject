@@ -18,7 +18,7 @@ void PerformMedicalCheckup(int *id) {
     sem_wait(&PerformCheckup);
     printf("Patient %d (Thread ID: %ld): Performing Medical Checkup.\n" , *id, pthread_self());
     sleep(waitTime);
-    sem_pos(&PerformCheckup);
+    sem_post(&PerformCheckup);
 }
 
 

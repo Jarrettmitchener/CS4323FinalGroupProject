@@ -4,6 +4,10 @@
 #include <semaphore.h>
 #include <pthread.h>
 
+sem_t REGISTER_OPEN;
+sem_t SOMEONE_AT_REGISTER;
+sem_t PAYMENT_MADE;
+
 void acceptPayment(int *id)
 {
     sem_wait(&REGISTER_OPEN); //checks to see if the register is open or not.
@@ -23,6 +27,36 @@ void makePayment(int *id)
 void leaveClinic(int *id)
 {
     printf("Patient %d (Thread ID: %ld): Leaving Clinic after receiving checkup.\n" , *id, pthread_self());
+}
+/*!!!!!!!!!!!!!!!EVERYTHING BELLOW IS USED JUST FOR TESTING PURPOSES!!!!!!!!!!!!*/
+
+void* medProfDriver(void *arg)
+{
+    int id = 1;
+    printf("Medical Professional %d created successfully...\n", id);
+    acceptPayment(&id);
+
+}
+
+void* patientDriver(void *arg)
+{
+    int id = 1;
+    printf("Patient %d created successfully...\n", id);
+    makePayment(&id);
+    leaveClinic(&id);
+}
+
+
+int main()
+{
+    sem_init(&REGISTER_OPEN,0,1);
+    sem_init(&SOMEONE_AT_REGISTER,0,1);
+    sem_init(&PAYMENT_MADE,0,1);
+    pthread_t medProf;
+    pthread_t patient;
+    pthread_create(&patient,NULL, patientDriver,NULL);
+    pthread_create(&medProf,NULL,medProfDriver,NULL);
+    pthread_join(medProf,NULL);
 }
 
 

@@ -26,6 +26,9 @@ sem_t sofaSemaphore;//jm
 sem_t SOMEONE_AT_REGISTER;//cn
 sem_t PAYMENT_MADE;//cn
 sem_t REGISTER_OPEN;//cn
+sem_t ACCEPTED;//cn
+sem_t Professional_Ready;//pl
+sem_t PerformCheckup;//pl
 
 
 
@@ -81,6 +84,52 @@ void flag_init()
     }
 }
 
+//cn
+void makePayment(int *id)
+{
+    sem_wait(&SOMEONE_AT_REGISTER); // semaphore to make sure there is someone there to accept the payment.
+    printf("Patient %d (Thread ID: %ld): Making Payment.\n" , *id, pthread_self());
+    sem_post(&PAYMENT_MADE);// this lets the person accepting the payment that the payment has been made.
+    sem_wait(&ACCEPTED);
+}
+
+//cn
+void acceptPayment(int *id)
+{
+    sem_wait(&REGISTER_OPEN); //checks to see if the register is open or not.
+    sem_post(&SOMEONE_AT_REGISTER); //lets the patient know someone is at the register.
+    sem_wait(&PAYMENT_MADE); //waits for patient to make payment.
+    printf("Medical Professional %d (Thread ID: %ld): Accepting Payment.\n" , *id, pthread_self());
+    sem_post(&ACCEPTED);
+    sem_post(&REGISTER_OPEN);//opens the register again.
+}
+
+//cn
+void leaveClinic(int *id)
+{
+    printf("Patient %d (Thread ID: %ld): Leaving Clinic after receiving checkup.\n" , *id, pthread_self());
+}
+
+//pl
+void GetMedicalCheckup(int *id) {
+    sem_wait(&Professional_Ready); // wait for medical professional to be ready
+
+    sem_post(&Professional_Ready); // oh boi, he occupied with patient
+    printf("Medical Professional %d (Thread ID: %ld): Getting Patient Checkup.\n" , *id, pthread_self());
+    sem_post(&PerformCheckup);
+    printf("Medical Professional %d (Thread ID: %ld): Patient Checkup Complete.\n" , *id, pthread_self());
+    sem_post(&Professional_Ready); // he ready
+}
+
+//pl
+void PerformMedicalCheckup(int *id) {
+    sem_wait(&PerformCheckup);
+
+    printf("Patient %d (Thread ID: %ld): Performing Medical Checkup.\n" , *id, pthread_self());
+    sleep(1);
+    sem_post(&PerformCheckup);
+}
+
 //function for medical professional threads
 void* medProfFunc(void *arg)
 {
@@ -88,6 +137,10 @@ void* medProfFunc(void *arg)
     int id = data->id;//jm
     int tid = data->tid;//jm
     //printf("med ID %i has been made\n", id);
+    
+    GetMedicalCheckup(&id);//pl
+
+    acceptPayment(&id);
 }
 
 //function for patient threads
@@ -128,30 +181,17 @@ void* patientFunc(void *arg)
 
         printf("Patient %3i (Thread ID %5i):Sitting on a sofa in the waiting room\n", id, tid);//jm
         sleep(2);//jm
+
+        GetMedicalCheckup(&id);//pl
+
         sem_post(&sofaSemaphore);//jm
         //end of sofa section
+
+        makePayment(&id);//cn
+        leaveClinic(&id);//cn
     }
     
 }
-
-//cn
-void makePayment(int *id)
-{
-    sem_wait(&SOMEONE_AT_REGISTER); // semaphore to make sure there is someone there to accept the payment.
-    printf("Patient %d (Thread ID: %ld): Making Payment.\n" , *id, pthread_self());
-    sem_post(&PAYMENT_MADE);// this lets the person accepting the payment that the payment has been made.
-}
-
-//cn
-void acceptPayment(int *id)
-{
-    sem_wait(&REGISTER_OPEN); //checks to see if the register is open or not.
-    sem_post(&SOMEONE_AT_REGISTER); //lets the patient know someone is at the register.
-    printf("Medical Professional %d (Thread ID: %ld): Accepting Payment.\n" , *id, pthread_self());
-    sem_wait(&PAYMENT_MADE); //waits for patient to make payment.
-    sem_post(&REGISTER_OPEN); //opens the register again.
-}
-
 
 
 int main()
@@ -161,6 +201,8 @@ int main()
     sem_init(&SOMEONE_AT_REGISTER, 0, 1); //cn
     sem_init(&PAYMENT_MADE, 0, 1);//cn
     sem_init(&REGISTER_OPEN, 0, 1);//cn
+    sem_init(&Professional_Ready,0,1);//pl
+    sem_init(&PerformCheckup,0,1);//pl
 
     pthread_mutex_init(&waitingRoomMutex, NULL);//jm
 

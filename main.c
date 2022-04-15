@@ -3,412 +3,157 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-#include <semaphore.h>
+#include <stdlib.h>
 
-#include "Caleb.c"
-#include "Keenan.c"
-#include "Patrick.c"
+#include "header.h"
+
+#include "caleb.c"
+#include "keenan.c"
+#include "patrick.c"
 #include "utility.c"
 
+//#include "test.c"
 
-//mutexes and semaphore variables declared here 
-pthread_mutex_t waitingRoomMutex;
-pthread_mutex_t checkSofa;
-pthread_mutex_t checkWait;
-pthread_mutex_t timing;
-pthread_mutex_t temp;
-sem_t sofaSemaphore;
-
-
-//counters used for functions
-int waitingroomCounter = 0;
-
-//statistic variables
-int numOfSuccessfulCheckups = 0;
-int numOfPatientsThatLeft = 0;
-double avgWaitTimeForMedProf = 0;
-double avgWaitTimeForPatients = 0;
-
-//array used to store amount of time waiting to sit on sofa
-int waitTimeArr[10000];
-//amount of time sitting on sofa
-int sofaWaitTimeArr[10000];
-
-//patient and medical professionals status arrays
-int patientArr[10000];
-int medProfArr[10000];
-
-//variables that are used in testing
-//will be removed later when program arguments are added;
-int spaceOfWaitingRoom = 5;
-int numOfPatients = 7;
-int numOfSofas = 3;
-int numOfMedProf = 1;
+//temp variables that will be changed later
+int numOfPatients = 10;
+int numOfMedProfs = 1;
 int numOfThreads;
+int numOfSofas = 2;
+int numOfWaitingRoomSlots = 7;
 
-//boolean array that will be used to determine when threads fire
-int flag[15];
+int sofaCounter = 0;
 
-//struct for medical professional
-typedef struct _medProf
+//arrays that will be used to determine the status of the patients/medical professionals
+//-1: nothing has been done with them yet
+int *patientStatusArr;
+int *medProfStatusArr;
+
+//keeps track of time for sofa and waiting room
+double *waitingRoomTimeArr;
+double *sofaWaitingTimeArr;
+//thread activation array for patient threads
+int* threadActivateArr;
+
+//mutex that will be used for adding/removing waiting room 
+pthread_mutex_t waitingRoomMutex;
+pthread_mutex_t waitingRoomTimeMutex;
+pthread_mutex_t checkSofaMutex;
+
+//patient thread function
+void* patientThread(void *arg)
 {
-    int tid;
-    int id;
-    double waitTime;
-    clock_t time;
-} medProf;
-
-//struct for patient
-typedef struct _patient
-{
-    int tid;
-    int id;
-    double waitingRoomTime;
-    double sofaWaitTime;
-    clock_t time;
-} patient;
-
-//finds largest wait time array and returns if the
-//specified thread is the one with the largest time;
-int findMaxWaitTime(int id)
-{
-    int max = waitTimeArr[0];
-    int maxIndex = 0;
-
-    for(int i = 1; i < numOfPatients; i++)
-    {
-        if(waitTimeArr[i] > max)
-        {
-            max = waitTimeArr[i];
-            maxIndex = i;
-        }
-    }
-    if(getNumOfPatientsOnSofas() >= numOfSofas)
-    {
-        return 0;//means user doesnt get on sofa
-    }
-    else
-    {
-        if(maxIndex == id)
-        {
-            return 1;
-        }
-        else
-        {
-            return 0;
-        }
-    }
-}
-
-//finds largest wait time for sofa array and returns if the
-//specified thread is the one with the largest time;
-int findMaxSofaWaitTime(int PID)
-{
-    int max = sofaWaitTimeArr[0];
-    int maxIndex = 0;
-
-    for(int i = 1; i < numOfPatients; i++)
-    {
-        if(sofaWaitTimeArr[i] > max)
-        {
-            max = sofaWaitTimeArr[i];
-            maxIndex = i;
-        }
-    }
-
-
-    if(maxIndex == PID)
-    {
-        sofaWaitTimeArr[maxIndex] = -1;
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-}
-//function to add people to waiting room
-int addWaitingRoom()
-{
-    if(waitingroomCounter == spaceOfWaitingRoom)
-    {
-        return 0;
-    }
-    else 
-    {
-        waitingroomCounter++;
-        return 1;
-    }
-}
-//function to lower waiting room counter
-//will be used when patient is being checked up on 
-void removeWaitingRoom()
-{
-    waitingroomCounter--;
-}
-
-//adds number of Patients that left counter
-void addPatientsLeft()
-{
-    numOfPatientsThatLeft++;
-}
-
-//setters for patient and medProf Arrays
-void setPatientArr(int PID, int value)
-{
-    patientArr[PID] = value;
-}
-
-void setMedProfArr(int MID, int value)
-{
-    medProfArr[MID] = value;
-}
-//getters for patient and medical professional array
-int getPatientStatus(int PID)
-{
-    return patientArr[PID];
-}
-
-int getMedProfStatus(int MID)
-{
-    return medProfArr[MID];
-}
-
-int getNumOfPatients()
-{
-    return numOfPatients;
-}
-//start of functions that are needed according to document
-//note that some of these functions really don't need to exist
-//like sit on sofa, the semaphore already stops the sofa from 
-//being sat on if the sofas are full
-//because of this, I tried to give them some utility use
-//and added more methods that would work with the utility use
-//like adding to a global sofa counter variables
-
-
-void enterWaitingRoom(int id, int tid)
-{
-    printf("Patient %3i (Thread ID %5i):Going into the clinic\n", id, tid);
-}
-
-
-//function for medical professional threads
-void* medProfFunc(void *arg)
-{
-    medProf *data = (medProf *)arg;
-    int id = data->id;
-    int tid = data->tid;
-
-    waitForPatient(id, tid);
-    //start of while loop
-    while(1)
-    {
-        int checkup = -1;
-
-        while(checkup == -1)
-        {
-            checkup = checkIfPatientOpen(numOfPatients, patientArr);
-        }
-
-        yellow();
-        printf("MedProf ID %3i is checking up on patient ID %i\n", id, checkup);
-        reset();
-
-        patientArr[checkup] = -1;//temp resets patient value
-    }
-
-}
-
-//function for patient threads
-void* patientFunc(void *arg)
-{
+    //gets patient data object
     patient *data = (patient *)arg;
     int id = data->id;
     int tid = data->tid;
 
     //thread waits so it can only start when told to by main
-    while(flag[id] == 0);
+    while(threadActivateArr[id] == -1);
 
-    //critical section for waiting room entering
     pthread_mutex_lock(&waitingRoomMutex);
-    printf("Patient %3i (Thread ID %5i):Arriving at clinic\n", id, tid);
 
-    int leave = addWaitingRoom();
-    if(leave == 0)
-    {
-        red();
-        printf("Patient %3i (Thread ID %5i):Leaving clinic without checkup\n", id, tid);
-        reset();
+    //flag that determines if patient can enter the waiting room
+    int canEnter = canEnterWaitingRoom(id, tid);
 
-        //adds to amount of patients that didnt get a medical checkup
-        addPatientsLeft();
-        pthread_mutex_unlock(&waitingRoomMutex);
-    }
-    else
+    //if they can enter the waiting room
+    if(canEnter == 1)
     {
-        //sucessfully enters waiting room
+
         enterWaitingRoom(id, tid);
-        data->time = clock();
-
-        sleep(2);
+        patientStatusArr[id] = 0;//updates patient status
         pthread_mutex_unlock(&waitingRoomMutex);
-        //end of entering waiting room critical section
 
-        int canSitOnSofa = 0;
-
+        double time = getTime();//used to get final time waited for sofa
         
+        int canSitOnSofa = 0;
+        //while loop so that it waits until user is the one with the most time in waiting room to sit on the sofa
         while(canSitOnSofa == 0)
         {
-            clock_t waitClock = clock() - data->time;
-            double timeTaken = ((double)waitClock)/CLOCKS_PER_SEC;
-            waitTimeArr[id] = timeTaken;
+            pthread_mutex_lock(&checkSofaMutex);
 
-            pthread_mutex_lock(&checkSofa);
+            double tempTime = getTime() - time;
+            waitingRoomTimeArr[id] = tempTime;
 
-            canSitOnSofa = findMaxWaitTime(id);
+            canSitOnSofa = canMoveToSofa(id);
             if(canSitOnSofa == 1)
             {
-                addToSofas();//keenan Holsapple
+                sitOnSofa(id, tid);
             }
-
-            pthread_mutex_unlock(&checkSofa);
+            pthread_mutex_unlock(&checkSofaMutex);
         }
-        
-        //start of sofa semaphore critical section
-        sem_wait(&sofaSemaphore);
-
-        sitOnSofa(id, tid);//keenan
-        data->time = clock();
-        
-        //printf("Thread ID: %i took %f time\n", id, timeTaken);
-        sleep(2);
-
-        //temp gets off of sofa
-        removeFromSofas();//keenan
-
-        sem_post(&sofaSemaphore);
-        //end of sofa section
-
-        
-        //section where it is determined if patient has longest wait time
-        int canGetCheckup = 0;
-        int counter = 0;
-        while(canGetCheckup == 0)
-        {
-            clock_t sofaClock = clock() - data->time;
-            double timeTaken = ((double)data->time)/CLOCKS_PER_SEC;
-            sofaWaitTimeArr[id] = timeTaken;
-
-            pthread_mutex_lock(&checkWait);
-
-            canGetCheckup = findMaxSofaWaitTime(id);
-            if(canGetCheckup == 1)
-            {
-                //addToSofas();//keenan Holsapple
-                //printf()
-            }
-
-            pthread_mutex_unlock(&checkWait);
-            if(counter > 500)
-            {
-                printf("Thread ID %i is BRUHHHHHing\n", tid);
-                sleep(2);
-            }
-            counter++;
-        }
-
-        printf("Patient ID %3i has longest wait time on sofa\n", id);
-        patientArr[id] = 0;
-        
+        sleep(4);
+        sofaCounter--;
     }
-    
+    //if patient cannot enter the waiting room
+    else
+    {
+        pthread_mutex_unlock(&waitingRoomMutex);
+    }
 }
 
-//intializes the begin flag
-void flag_init()
+//medical professional thread function
+void* medProfThread(void *arg)
 {
-    for(int i = 0; i < numOfPatients; i++)
-    {
-        flag[i] = 0;
-    }
+    //gets medical professional data object
+    medProf *data = (medProf *)arg;
+    int id = data->id;
+    int tid = data->tid;
 }
 
-//intializes the status fo patient and medProf arr
-void statusInit(int patients, int medProfs)
-{
-    for(int i = 0; i < patients; i++)
-    {
-        patientArr[i] = -1;
-    }
-    for(int i = 0; i < medProfs; i++)
-    {
-        medProfArr[i] = -1;
-    }
-}
 int main()
 {
-    //intilization of semaphores, mutex locks, and flags
-    sem_init(&sofaSemaphore, 0, 5);
+    //sets thread number
+    numOfThreads = numOfPatients + numOfMedProfs;
+
+    //initiliazes our arrays
+    patientStatusArr = arrInit(numOfPatients, patientStatusArr);
+    medProfStatusArr = arrInit(numOfMedProfs, medProfStatusArr);
+    waitingRoomTimeArr = arrInitDouble(numOfPatients, waitingRoomTimeArr);
+    sofaWaitingTimeArr = arrInitDouble(numOfPatients, sofaWaitingTimeArr);
+    threadActivateArr = arrInit(numOfPatients, threadActivateArr);
+
     pthread_mutex_init(&waitingRoomMutex, NULL);
-    pthread_mutex_init(&checkSofa, NULL);
-    pthread_mutex_init(&timing, NULL);
-    pthread_mutex_init(&temp, NULL);
-    flag_init();
-    statusInit(numOfPatients, numOfMedProf);
-    numOfThreads = numOfPatients + numOfMedProf;
+    pthread_mutex_init(&waitingRoomTimeMutex, NULL);
+    pthread_mutex_init(&checkSofaMutex, NULL);
 
-    //keenan
-    setAmountOfSofas(numOfSofas);
-
-    
-    //creates the threadpool
-    //currently only using patient implementation
+    //initializes threads and patient/medical professional arrays
     pthread_t threads[numOfThreads];
     patient patientData[numOfPatients];
-    medProf medProfData[numOfMedProf];
-    int rc;
-    int counter = 0;
+    medProf medProfData[numOfMedProfs];
+
     for(int i = 0; i < numOfThreads; i++)
     {
 
-        if(i < numOfMedProf)
+        //creates the medical professional threads
+        if(i < numOfMedProfs)
         {
-            medProfData[i].id = counter;
+            medProfData[i].id = i;
             medProfData[i].tid = i;
-            medProfData[i].waitTime = 0;
+            medProfData[i].waitForPatientTime = 0;
 
-            if ((rc = pthread_create(&threads[i], NULL, medProfFunc, &medProfData[i])))
-            {
-                //this will only run if the thread cannot be created 
-                fprintf(stderr, "error creating medical professional thread %i\n", i);
-                return EXIT_FAILURE;
-            }
+            pthread_create(&threads[i], NULL, medProfThread, &medProfData[i]);           
         }
+        //creates the patient threads
         else
         {
-            //assigns patient data
-            patientData[i - numOfMedProf].id = i - numOfMedProf;
-            patientData[i - numOfMedProf].tid = counter;
-            patientData[i - numOfMedProf].waitingRoomTime = 0;
+            patientData[i - numOfMedProfs].id = i - numOfMedProfs;
+            patientData[i - numOfMedProfs].tid = i;
+            patientData[i - numOfMedProfs].waitingRoomTime = 0;
+            patientData[i - numOfMedProfs].sofaWaitTime = 0;
 
-            waitTimeArr[i - numOfMedProf] = -1;
-            if ((rc = pthread_create(&threads[i], NULL, patientFunc, &patientData[i - numOfMedProf])))
-            {
-                //this will only run if the thread cannot be created 
-                fprintf(stderr, "error creating patient thread %i\n", i);
-                return EXIT_FAILURE;
-            }
+            pthread_create(&threads[i], NULL, patientThread, &patientData[i - numOfMedProfs]);
+
         }
-        usleep(100);
-        counter++;
     }
 
-    //activates the threads every second
+    //activates the patient threads every second
     for(int i = 0; i < numOfPatients; i++)
     {
-        sleep(1);
-        flag[i] = 1;
+        //sleep(1);
+        
+        int millisecond = 10;
+        usleep(millisecond * 1000);
+        threadActivateArr[i] = 1;
     }
 
     //joins the threads so program waits on their activation
@@ -420,8 +165,6 @@ int main()
     }
     printf("ALL HAVE BEEN JOINED\n");
 
-    //destroys mutexes and semaphores
-    sem_destroy(&sofaSemaphore);
-    pthread_mutex_destroy(&waitingRoomMutex);
+    printf("average waiting room time: %f\n", getAvgWaitingRoomTime());
 
 }

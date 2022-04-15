@@ -1,38 +1,100 @@
-//utility function for colors
+#include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <unistd.h>
+#include <stdlib.h>
 
+#include "header.h"
 
-void red() 
+int waitingRoomCounter = 0;
+
+double avgWaitingRoomTime = 0;
+int counter = 0;
+
+//function that determines if a patient can enter the waiting room
+int canEnterWaitingRoom(int id, int tid)
 {
-    printf("\033[1;31m");
+    int canEnter;
+    printf("Patient %3i (Thread ID: %5i): Arriving at the clinic\n", id, tid);
+    //if the waiting room has a spot
+    if(waitingRoomCounter < numOfWaitingRoomSlots)
+    {
+        canEnter = 1;
+    }
+    //if waiting room is full
+    else
+    {
+        red();
+        printf("Patient %3i (Thread ID: %5i): Leaving clinic without checkup\n", id, tid);
+        resetColor();
+        canEnter = 0;
+    }
+
+    return canEnter;
 }
-void yellow() 
+//enter waiting room function
+void enterWaitingRoom(int id, int tid)
 {
-    printf("\033[1;33m");
-}
-void purple()
-{
-    printf("\033[1;35m");
-}
-void green()
-{
-    printf("\033[1;32m");
-}
-void blue()
-{
-    printf("\033[1;34m");
-}
-void cyan()
-{
-    printf("\033[1;36m");
+    waitingRoomCounter++;
+
+    printf("Patient %3i (Thread ID: %5i): Entered the waiting room\n", id, tid);
+
 }
 
-void gray()
+//gets time at time of call
+double getTime()
 {
-    printf("\033[1;37m");
+    struct timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
+    return now.tv_sec + now.tv_nsec*1e-9;
 }
 
-void reset() 
+//function to add to Avgwaitingroom time
+void addToAvgWaitTime(double time)
 {
-    printf("\033[0m");
+    avgWaitingRoomTime = avgWaitingRoomTime + time;
+    counter++;
+}
+double getAvgWaitingRoomTime()
+{
+    double avg = avgWaitingRoomTime/counter;
+}
+//sees if someone who is standing in the waiting room can move to the sofa
+//returns 1 if can move
+//returns 0 if cannot
+//DOES NOT ADD TO THE SOFA COUNTER
+int canMoveToSofa(int id)
+{
+    //if sofas are full
+    if(sofaCounter == numOfSofas)
+    {
+        return 0;
+    }
+    else
+    {
+        double max = 0;
+        int pid = -1;
+        //finds max index
+        for(int i = 0; i < numOfPatients; i++)
+        {
+            if(waitingRoomTimeArr[i] > max)
+            {
+                max = waitingRoomTimeArr[i];
+                pid = i;
+            }
+        }
+        //if maxindex is same as id, then can add to sofa
+        if(pid == id)
+        {
+            //adds to avgWaitTime value
+            addToAvgWaitTime(waitingRoomTimeArr[pid]);
+            waitingRoomTimeArr[pid] = 0;
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
 }

@@ -1,0 +1,15 @@
+Patient Status Arr
+
+-1: patient has been made 
+0: patient is in the waiting room
+1: patient is on the sofa
+2: waiting to get a checkup
+3: getting checkup
+4: patient has been checked
+5: patient is trying to pay
+6: patient has left
+
+medProf status Arr
+
+-1: waiting for patient
+0: starting checkup

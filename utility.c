@@ -7,10 +7,11 @@
 
 #include "header.h"
 
-int waitingRoomCounter = 0;
+int waitingRoomCounter;
 
 double avgWaitingRoomTime = 0;
 int counter = 0;
+int medProfCounter = 0;
 
 //function that determines if a patient can enter the waiting room
 int canEnterWaitingRoom(int id, int tid)
@@ -29,6 +30,7 @@ int canEnterWaitingRoom(int id, int tid)
         printf("Patient %3i (Thread ID: %5i): Leaving clinic without checkup\n", id, tid);
         resetColor();
         canEnter = 0;
+        unsuccessfullCheckupCounter++;
     }
 
     return canEnter;
@@ -51,9 +53,10 @@ double getTime()
 }
 
 //function to add to Avgwaitingroom time
-void addToAvgWaitTime(double time)
+void addToAvgWaitTime(double time, int pid)
 {
     avgWaitingRoomTime = avgWaitingRoomTime + time;
+    totalWaitTimeArr[pid] = totalWaitTimeArr[pid] + avgWaitingRoomTime;//for total wait time
     counter++;
 }
 double getAvgWaitingRoomTime()
@@ -88,7 +91,7 @@ int canMoveToSofa(int id)
         if(pid == id)
         {
             //adds to avgWaitTime value
-            addToAvgWaitTime(waitingRoomTimeArr[pid]);
+            addToAvgWaitTime(waitingRoomTimeArr[pid], id);
             waitingRoomTimeArr[pid] = 0;
             return 1;
         }
@@ -97,4 +100,56 @@ int canMoveToSofa(int id)
             return 0;
         }
     }
+}
+//checks to see if threads will end
+int endProgram()
+{
+    int endCounter = 0;
+    for(int i = 0; i < numOfPatients; i++)
+    {
+        if(endFlagArr[i] == 1)
+        {
+            endCounter++;
+        }
+    }
+    if (endCounter == numOfPatients)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+double getAvgWaitTime()
+{
+    double total = 0;
+    for(int i = 0; i < numOfPatients; i++)
+    {
+        total = total + totalWaitTimeArr[i];
+    }
+    total = total/numOfPatients;
+    return total;
+}
+
+void addWaitTimeforMedProf(double time, int id)
+{
+    totalTimeWaitingForPatients[id] = totalTimeWaitingForPatients[id] + time;//adds wait time to arr
+    medProfCounter++;
+}
+
+double getWaitTimeForPatients()
+{
+    double total = 0;
+    for(int i = 0; i < numOfMedProfs; i++)
+    {
+        total = total + totalTimeWaitingForPatients[i];
+    }
+    total = total / medProfCounter;
+    //if(total < 0)
+    //{
+    //    total = 0;
+    //}
+    return total;
 }

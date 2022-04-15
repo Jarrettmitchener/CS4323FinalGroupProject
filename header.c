@@ -6,24 +6,24 @@ int getNum()
     return 5;
 }
 
-int* arrInit(int n, int *arr)
+int* arrInit(int n, int *arr, int j)
 {
     arr = (int*)malloc(10* n);
 
     for(int i = 0; i < n; i++)
     {
-        arr[i] = -1;
+        arr[i] = j;
     }
     return arr;
 }
 
-double* arrInitDouble(int n, double *arr)
+double* arrInitDouble(int n, double *arr, double j)
 {
     arr = (double*)malloc(10* n);
 
     for(int i = 0; i < n; i++)
     {
-        arr[i] = -1;
+        arr[i] = j;
     }
     return arr;
 }
@@ -62,3 +62,4 @@ void resetColor()
 {
     printf("\033[0m");
 }
+

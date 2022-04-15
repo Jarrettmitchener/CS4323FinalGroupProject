@@ -3,8 +3,8 @@
 
 int getNum();
 
-int* arrInit(int n, int *arr);
-double* arrInitDouble(int n, double *arr);
+int* arrInit(int n, int *arr, int j);
+double* arrInitDouble(int n, double *arr, double j);
 
 void red();
 void yellow();
@@ -22,16 +22,31 @@ extern int numOfSofas;
 extern int numOfWaitingRoomSlots;
 
 extern int sofaCounter;
+extern int waitingRoomCounter;
+extern int successfullCheckupCounter;
+extern int unsuccessfullCheckupCounter;
 
 extern int *patientStatusArr;
 extern int *medProfStatusArr;
+extern int *endFlagArr;
 
 extern double *waitingRoomTimeArr;
 extern double *sofaWaitingTimeArr;
+extern double *totalWaitTimeArr;
+extern double *totalTimeWaitingForPatients;
+
 
 extern pthread_mutex_t waitingRoomMutex;
 extern pthread_mutex_t waitingRoomTimeMutex;
 extern pthread_mutex_t checkSofaMutex;
+extern pthread_mutex_t canGetCheckupMutex;
+extern pthread_mutex_t checkForPatientsMutex;
+extern pthread_mutex_t checkupMutex;
+extern pthread_mutex_t transactionMutex;
+extern pthread_mutex_t changePID;
+extern pthread_mutex_t accessPID;
+
+extern sem_t leaveSemaphore;
 
 typedef struct patient
 {

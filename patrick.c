@@ -6,19 +6,21 @@
 
 #include "header.h"
 
+//patient get checkup method
 void getMedicalCheckup(int id, int tid)
 {
     cyan();
     printf("Patient %3i (Thread ID: %5i): Getting checkup\n", id, tid);
     resetColor();
     pthread_mutex_lock(&accessPID);
-    patientStatusArr[id] = 2;
+    patientStatusArr[id] = 2;//changes status of patient
     pthread_mutex_unlock(&accessPID);
     sofaCounter--;//frees up sofa space
     waitingRoomCounter--;//frees up waiting room space
     
 }
 
+//medical professional performing medical checkup
 void PerformMedicalCheckup(int id, int tid, int pid)
 {
     purple();

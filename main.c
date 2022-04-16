@@ -1,3 +1,9 @@
+//Group A
+//Name: Jarrett Mitchener
+//email:jarrett.mitchener@okstate.edu
+//Date: 4/15/2022
+//This is basically the main method
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -287,7 +293,7 @@ int main()
     printf("Number of sucessful checkups: %i\n", successfullCheckupCounter);
     printf("Average waiting time for Medical Professionals: %f seconds\n", getAvgWaitTime());
     printf("Number of Patients that left: %i\n", unsuccessfullCheckupCounter);
-    printf("Average wait time for patients: %f seconds\n", getWaitTimeForPatients());
+    printf("Average wait time for patients: %f seconds\n", getAvgWaitTimeForPatients());
     
 
 }

@@ -1,11 +1,13 @@
+//Group A
+//Name: Jarrett Mitchener
+//email:jarrett.mitchener@okstate.edu
+//Date: 4/15/2022
+
+
 #include <stdlib.h>
 #include <stdio.h>
 
-int getNum()
-{
-    return 5;
-}
-
+//initializes an int array with given length and given value
 int* arrInit(int n, int *arr, int j)
 {
     arr = (int*)malloc(10* n);
@@ -17,6 +19,7 @@ int* arrInit(int n, int *arr, int j)
     return arr;
 }
 
+//initializes an double array with given length and given value
 double* arrInitDouble(int n, double *arr, double j)
 {
     arr = (double*)malloc(10* n);
@@ -28,6 +31,8 @@ double* arrInitDouble(int n, double *arr, double j)
     return arr;
 }
 
+//these utility functions just change the color of the printed out
+//just for ease of use
 void red() 
 {
     printf("\033[1;31m");
@@ -57,7 +62,7 @@ void gray()
 {
     printf("\033[1;37m");
 }
-
+//resets the console to default color
 void resetColor() 
 {
     printf("\033[0m");

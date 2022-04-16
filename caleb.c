@@ -29,7 +29,7 @@ void acceptPayment(int id, int tid, int pid)
     patientStatusArr[pid] = 6;
     pthread_mutex_unlock(&accessPID);
 }
-
+//patient leaves clinic
 void leaveClinic(int id, int tid)
 {
     yellow();

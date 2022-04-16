@@ -1,3 +1,8 @@
+//Group A
+//Name: Jarrett Mitchener
+//email:jarrett.mitchener@okstate.edu
+//Date: 4/15/2022
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,7 +43,7 @@ int canEnterWaitingRoom(int id, int tid)
 //enter waiting room function
 void enterWaitingRoom(int id, int tid)
 {
-    waitingRoomCounter++;
+    waitingRoomCounter++;//adds to amount of people in the waiting room
 
     printf("Patient %3i (Thread ID: %5i): Entered the waiting room\n", id, tid);
 
@@ -121,7 +126,8 @@ int endProgram()
         return 0;
     }
 }
-
+//computes average wait time of the patients
+//this includes time waiting for a sofa and a time waiting on the sofa
 double getAvgWaitTime()
 {
     double total = 0;
@@ -133,13 +139,15 @@ double getAvgWaitTime()
     return total;
 }
 
+//adds the total wait time for the medical professionals as well as the counter
 void addWaitTimeforMedProf(double time, int id)
 {
     totalTimeWaitingForPatients[id] = totalTimeWaitingForPatients[id] + time;//adds wait time to arr
     medProfCounter++;
 }
 
-double getWaitTimeForPatients()
+//computes the average waiting time medical profesionals had to wait for patients
+double getAvgWaitTimeForPatients()
 {
     double total = 0;
     for(int i = 0; i < numOfMedProfs; i++)

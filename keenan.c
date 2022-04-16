@@ -41,7 +41,7 @@ int isMedProfOpen()
     }
     return 0;
 }
-
+//adds to average sofa waiting time
 void addToAvgSofaWaitTime(double time, int pid)
 {
     avgSofaWaitingTime = avgSofaWaitingTime + time;

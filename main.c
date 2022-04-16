@@ -63,6 +63,7 @@ pthread_mutex_t changePID;
 pthread_mutex_t accessPID;
 
 sem_t transactionSemaphore;
+sem_t canGetCheckupSemaphore;
 
 
 //patient thread function
@@ -118,7 +119,7 @@ void* patientThread(void *arg)
         //while loop that continues until person can get a medical checkup
         while(canGetMedicalCheckup == 0)
         {
-            pthread_mutex_lock(&canGetCheckupMutex);
+            sem_wait(&canGetCheckupSemaphore);
             //printf("%i BRUH\n", id);
             //updates the patient sofa wait time
             double tempTime = getTime() - time;
@@ -133,7 +134,7 @@ void* patientThread(void *arg)
                 getMedicalCheckup(id, tid);
             }
 
-            pthread_mutex_unlock(&canGetCheckupMutex);
+            sem_post(&canGetCheckupSemaphore);
 
         }
 
@@ -270,6 +271,7 @@ int main(int argc, char* argv[])
     pthread_mutex_init(&accessPID, NULL);
 
     sem_init(&transactionSemaphore, 0, 1);
+    sem_init(&canGetCheckupSemaphore, 0, 1);
 
     //initializes threads and patient/medical professional arrays
     pthread_t threads[numOfThreads];
@@ -284,7 +286,7 @@ int main(int argc, char* argv[])
         {
             medProfData[i].id = i;
             medProfData[i].tid = i;
-            medProfData[i].waitForPatientTime = 0;
+            //medProfData[i].waitForPatientTime = 0;
 
             pthread_create(&threads[i], NULL, medProfThread, &medProfData[i]);           
         }
@@ -293,8 +295,8 @@ int main(int argc, char* argv[])
         {
             patientData[i - numOfMedProfs].id = i - numOfMedProfs;
             patientData[i - numOfMedProfs].tid = i;
-            patientData[i - numOfMedProfs].waitingRoomTime = 0;
-            patientData[i - numOfMedProfs].sofaWaitTime = 0;
+            //patientData[i - numOfMedProfs].waitingRoomTime = 0;
+            //patientData[i - numOfMedProfs].sofaWaitTime = 0;
 
             pthread_create(&threads[i], NULL, patientThread, &patientData[i - numOfMedProfs]);
 

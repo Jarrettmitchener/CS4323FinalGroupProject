@@ -1,6 +1,6 @@
 //Group A
 //Name: Patrick Laverty
-//email:
+//email: patrick.laverty@okstate.edu
 //Date: 4/15/2022
 
 #include <pthread.h>

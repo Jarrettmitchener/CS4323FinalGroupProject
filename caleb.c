@@ -1,6 +1,6 @@
 //Group A
 //Name: Caleb Newport
-//email:
+//email: caleb.newport10@okstate.edu
 //Date: 4/15/2022
 
 #include <pthread.h>

@@ -55,7 +55,7 @@ extern double *totalTimeWaitingForPatients;
 extern pthread_mutex_t waitingRoomMutex;
 extern pthread_mutex_t waitingRoomTimeMutex;
 extern pthread_mutex_t checkSofaMutex;
-extern pthread_mutex_t canGetCheckupMutex;
+//extern pthread_mutex_t canGetCheckupMutex;
 extern pthread_mutex_t checkForPatientsMutex;
 extern pthread_mutex_t checkupMutex;
 extern pthread_mutex_t changePID;
@@ -63,14 +63,14 @@ extern pthread_mutex_t accessPID;
 
 //semaphores that are used
 extern sem_t transactionSemaphore;
+extern sem_t canGetCheckupSemaphore;
 
 //struct for patient data type
 typedef struct patient
 {
     int tid;
     int id;
-    double waitingRoomTime;
-    double sofaWaitTime;
+
 } patient;
 
 //struct for medical professional data type
@@ -78,7 +78,6 @@ typedef struct medProf
 {
     int tid;
     int id;
-    double waitForPatientTime;
 } medProf;
 
 #endif

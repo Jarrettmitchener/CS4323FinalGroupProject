@@ -1,6 +1,6 @@
 //Group A
 //Name: Keenan Holsapple
-//email:
+//email: keenan.holsapple@okstate.edu
 //Date: 4/15/2022
 
 #include <pthread.h>

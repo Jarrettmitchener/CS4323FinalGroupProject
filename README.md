@@ -11,3 +11,5 @@ need to comment and change/remove some variable names
 
 to run use
 gcc main.c header.c -o main -lpthread
+
+then ./main var1 var2 var3 var4 var5 var6

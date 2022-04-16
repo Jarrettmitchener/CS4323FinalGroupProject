@@ -30,6 +30,10 @@ extern int numOfThreads;
 extern int numOfSofas;
 extern int numOfWaitingRoomSlots;
 
+//variables gained from command line arg
+extern int numberOfMedicalProfessionals, numberOfPatients, waitingRoomCapacity, numberOfSofa;
+extern int maximumArrivalTime, perPatientCheckupTime;
+
 //counters
 extern int sofaCounter;
 extern int waitingRoomCounter;
@@ -54,12 +58,11 @@ extern pthread_mutex_t checkSofaMutex;
 extern pthread_mutex_t canGetCheckupMutex;
 extern pthread_mutex_t checkForPatientsMutex;
 extern pthread_mutex_t checkupMutex;
-extern pthread_mutex_t transactionMutex;
 extern pthread_mutex_t changePID;
 extern pthread_mutex_t accessPID;
 
 //semaphores that are used
-extern sem_t leaveSemaphore;
+extern sem_t transactionSemaphore;
 
 //struct for patient data type
 typedef struct patient

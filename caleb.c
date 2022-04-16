@@ -1,3 +1,8 @@
+//Group A
+//Name: Caleb Newport
+//email:
+//Date: 4/15/2022
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,9 +26,9 @@ void makePayment(int id, int tid, int mid)
 //accepts payment 
 void acceptPayment(int id, int tid, int pid)
 {
-    pthread_mutex_lock(&transactionMutex);
+    sem_wait(&transactionSemaphore);
     printf("Medical Professional %3i (Thread ID: %5i): Accepting Payment from Patient %3i\n", id, tid, pid);
-    pthread_mutex_unlock(&transactionMutex);
+    sem_post(&transactionSemaphore);
 
     pthread_mutex_lock(&accessPID);
     patientStatusArr[pid] = 6;

@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-//initializes an int array with given length and given value
+//initializes an int array with given length and  bv given value
 int* arrInit(int n, int *arr, int j)
 {
     arr = (int*)malloc(10* n);

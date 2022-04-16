@@ -1,3 +1,8 @@
+//Group A
+//Name: Patrick Laverty
+//email:
+//Date: 4/15/2022
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,9 +31,9 @@ void PerformMedicalCheckup(int id, int tid, int pid)
     purple();
     printf("Medical Professional %3i (Thread ID: %5i): Checking Patient %3i\n", id, tid, pid);
     resetColor();
-    sleep(7);
+    usleep(perPatientCheckupTime * 1000);//sleeps for amount of time specified in program parameters
     pthread_mutex_lock(&accessPID);
-    patientStatusArr[pid] = 4;
+    patientStatusArr[pid] = 4;//changes patient status
     pthread_mutex_unlock(&accessPID);
 }
 //returns id of open MedProf

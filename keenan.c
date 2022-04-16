@@ -1,3 +1,8 @@
+//Group A
+//Name: Keenan Holsapple
+//email:
+//Date: 4/15/2022
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -28,6 +28,10 @@ int numOfThreads;
 int numOfSofas = 3;
 int numOfWaitingRoomSlots = 5;
 
+//variables gained from command line arg
+int numberOfMedicalProfessionals, numberOfPatients, waitingRoomCapacity, numberOfSofa;
+int maximumArrivalTime, perPatientCheckupTime;
+
 int sofaCounter = 0;
 int waitingRoomCounter = 0;
 int successfullCheckupCounter = 0;
@@ -54,11 +58,11 @@ pthread_mutex_t checkSofaMutex;
 pthread_mutex_t canGetCheckupMutex;
 pthread_mutex_t checkForPatientsMutex;
 pthread_mutex_t checkupMutex;
-pthread_mutex_t transactionMutex;
+
 pthread_mutex_t changePID;
 pthread_mutex_t accessPID;
 
-sem_t leaveSemaphore;
+sem_t transactionSemaphore;
 
 
 //patient thread function
@@ -213,8 +217,35 @@ void* medProfThread(void *arg)
 
 }
 
-int main()
+int main(int argc, char* argv[])
 {
+    char* c;
+
+    //collects and converts needed parameters from command line
+    c = argv[1];
+    numberOfMedicalProfessionals = atoi(c);
+
+    c = argv[2];
+    numberOfPatients = atoi(c);
+
+    c = argv[3];
+    waitingRoomCapacity = atoi(c);
+
+    c = argv[4];
+    numberOfSofa = atoi(c);
+
+    c = argv[5];
+    maximumArrivalTime = atoi(c);
+
+    c = argv[6];
+    perPatientCheckupTime = atoi(c);
+
+    //assigns the above variables to my variables for ease of use
+    numOfMedProfs = numberOfMedicalProfessionals;
+    numOfPatients = numberOfPatients;
+    numOfWaitingRoomSlots = waitingRoomCapacity;
+    numOfSofas = numberOfSofa;
+
     //sets thread number
     numOfThreads = numOfPatients + numOfMedProfs;
 
@@ -234,11 +265,11 @@ int main()
     pthread_mutex_init(&canGetCheckupMutex, NULL);
     pthread_mutex_init(&checkForPatientsMutex, NULL);
     pthread_mutex_init(&checkupMutex, NULL);
-    pthread_mutex_init(&transactionMutex, NULL);
+    //pthread_mutex_init(&transactionMutex, NULL);
     pthread_mutex_init(&changePID, NULL);
     pthread_mutex_init(&accessPID, NULL);
 
-    sem_init(&leaveSemaphore, 0, 1);
+    sem_init(&transactionSemaphore, 0, 1);
 
     //initializes threads and patient/medical professional arrays
     pthread_t threads[numOfThreads];
@@ -270,13 +301,14 @@ int main()
         }
     }
 
+    srand(time(NULL));
+    int randomNum;
     //activates the patient threads every second
     for(int i = 0; i < numOfPatients; i++)
     {
-        sleep(1);
         
-        //int millisecond = 10;
-        //usleep(millisecond * 1000);
+        randomNum = rand() % maximumArrivalTime;
+        usleep(randomNum * 1000);
         threadActivateArr[i] = 1;
     }
 
@@ -287,13 +319,16 @@ int main()
         res = pthread_join(threads[i], NULL);
         //printf("%d\n", res);
     }
-    printf("ALL HAVE BEEN JOINED\n");
+    //printf("ALL HAVE BEEN JOINED\n");
 
-    printf("Statistical Summary:\n----------------------------------------------------------------\n");
+    printf("\n\nStatistical Summary:\n--------------------------------------------------------------------------\n");
     printf("Number of sucessful checkups: %i\n", successfullCheckupCounter);
     printf("Average waiting time for Medical Professionals: %f seconds\n", getAvgWaitTime());
     printf("Number of Patients that left: %i\n", unsuccessfullCheckupCounter);
     printf("Average wait time for patients: %f seconds\n", getAvgWaitTimeForPatients());
-    
+    printf("\nNote: while some of the outputs are colored, it is more for quick looks.\n");
+    printf("Sometimes the program context switches fast enough to where there will be no\n");
+    printf("color or the color is dragged onto another/wrong line. Hope this helps\n");
+
 
 }
